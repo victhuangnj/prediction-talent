@@ -1,44 +1,1825 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Polymarket Wallet Dashboard</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Polymarket Wallet Intelligence Terminal</title>
   <style>
-    body {
-      margin: 0;
-      background: #050505;
-      color: #39ff88;
-      font-family: monospace;
-      display: grid;
-      place-items: center;
-      min-height: 100vh;
+    :root {
+      --bg: #050505;
+      --panel: #101010;
+      --panel2: #171717;
+      --line: #2d2d2d;
+      --text: #f2f2f2;
+      --muted: #a3a3a3;
+      --green: #37ff86;
+      --red: #ff4d73;
+      --yellow: #ffe066;
+      --cyan: #4deeff;
+      --purple: #c084fc;
+      --orange: #ff9f43;
+      --shadow: #000;
     }
 
-    .box {
-      border: 3px solid #39ff88;
-      padding: 32px;
-      box-shadow: 8px 8px 0 #000;
-      background: #111;
-      max-width: 720px;
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      color: var(--text);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+      background:
+        linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px),
+        radial-gradient(circle at 20% 0%, rgba(55,255,134,0.08), transparent 35%),
+        radial-gradient(circle at 80% 20%, rgba(77,238,255,0.08), transparent 35%),
+        var(--bg);
+      background-size: 18px 18px, 18px 18px, auto, auto, auto;
+    }
+
+    .wrap {
+      max-width: 1320px;
+      margin: 0 auto;
+      padding: 28px 18px 90px;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      gap: 16px;
+      align-items: center;
+      margin-bottom: 20px;
+      color: var(--muted);
+      font-size: 12px;
+    }
+
+    .blink {
+      color: var(--green);
+      animation: blink 1s steps(2, start) infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .hero {
+      border: 3px solid var(--green);
+      background: linear-gradient(135deg, #0d0d0d, #141414);
+      box-shadow: 8px 8px 0 var(--shadow);
+      padding: 28px;
+      margin-bottom: 22px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      background: repeating-linear-gradient(
+        to bottom,
+        rgba(255,255,255,0.025),
+        rgba(255,255,255,0.025) 1px,
+        transparent 1px,
+        transparent 7px
+      );
+      mix-blend-mode: screen;
+      opacity: 0.4;
+    }
+
+    .hero-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    .terminal-label {
+      color: var(--cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      font-size: 12px;
+      margin-bottom: 14px;
     }
 
     h1 {
-      margin-top: 0;
-      font-size: 36px;
+      margin: 0;
+      font-size: clamp(28px, 5vw, 58px);
+      line-height: 1.05;
+      letter-spacing: -0.04em;
+      color: var(--green);
+      text-transform: uppercase;
     }
 
-    p {
-      color: #ddd;
+    .subtitle {
+      color: var(--muted);
+      line-height: 1.75;
+      max-width: 860px;
+      margin: 18px 0 0;
+      font-size: 14px;
+    }
+
+    .search {
+      margin-top: 24px;
+      display: grid;
+      grid-template-columns: 1fr 180px;
+      gap: 12px;
+    }
+
+    input {
+      width: 100%;
+      background: #050505;
+      color: var(--text);
+      border: 2px solid var(--line);
+      padding: 15px 16px;
+      font-family: inherit;
+      font-size: 14px;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--cyan);
+      box-shadow: 4px 4px 0 #000;
+    }
+
+    button {
+      background: var(--yellow);
+      color: #000;
+      border: 0;
+      font-family: inherit;
+      font-weight: 900;
+      cursor: pointer;
+      box-shadow: 5px 5px 0 #000;
+      text-transform: uppercase;
+    }
+
+    button:hover {
+      transform: translate(-1px, -1px);
+      box-shadow: 6px 6px 0 #000;
+    }
+
+    button:disabled {
+      opacity: 0.55;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .status {
+      margin-top: 14px;
+      min-height: 22px;
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .error {
+      color: var(--red);
+    }
+
+    .panel {
+      background: var(--panel);
+      border: 2px solid var(--line);
+      box-shadow: 6px 6px 0 #000;
+      padding: 20px;
+      margin-bottom: 22px;
+    }
+
+    .panel-title {
+      margin: 0 0 16px;
+      color: var(--text);
+      font-size: 18px;
+      text-transform: uppercase;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+    }
+
+    .panel-title span {
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 400;
+    }
+
+    .overview {
+      display: none;
+      border-color: var(--cyan);
+    }
+
+    .wallet-line {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+      color: var(--muted);
+      font-size: 13px;
+    }
+
+    .wallet-address {
+      color: var(--cyan);
+      word-break: break-all;
+    }
+
+    .roast-box {
+      border: 2px solid var(--green);
+      background: #070707;
+      padding: 18px;
+      margin-top: 18px;
+      box-shadow: 5px 5px 0 #000;
+    }
+
+    .roast-title {
+      color: var(--green);
+      font-size: 13px;
+      text-transform: uppercase;
+      margin-bottom: 10px;
+    }
+
+    .roast-text {
+      font-size: 18px;
+      line-height: 1.8;
+      color: var(--text);
+    }
+
+    .badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 16px;
+    }
+
+    .badge {
+      border: 1px solid var(--line);
+      background: #050505;
+      padding: 6px 9px;
+      font-size: 12px;
+      color: var(--yellow);
+      box-shadow: 3px 3px 0 #000;
+    }
+
+    .cards {
+      display: none;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 14px;
+      margin-bottom: 22px;
+    }
+
+    .card {
+      background: var(--panel);
+      border: 2px solid var(--line);
+      box-shadow: 5px 5px 0 #000;
+      padding: 16px;
+      min-height: 110px;
+    }
+
+    .card .label {
+      color: var(--muted);
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .card .value {
+      font-size: 24px;
+      font-weight: 900;
+      word-break: break-word;
+    }
+
+    .card .note {
+      color: var(--muted);
+      font-size: 11px;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+
+    .green { color: var(--green); }
+    .red { color: var(--red); }
+    .yellow { color: var(--yellow); }
+    .cyan { color: var(--cyan); }
+    .purple { color: var(--purple); }
+    .orange { color: var(--orange); }
+    .muted { color: var(--muted); }
+
+    .grid-2 {
+      display: none;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .grid-3 {
+      display: none;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 18px;
+      margin-bottom: 22px;
+    }
+
+    .bar-row {
+      display: grid;
+      grid-template-columns: 145px 1fr 90px;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+
+    .bar-name {
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      color: var(--muted);
+    }
+
+    .bar-track {
+      height: 18px;
+      background: #050505;
+      border: 1px solid #333;
+      overflow: hidden;
+    }
+
+    .bar {
+      height: 100%;
+      min-width: 2px;
+    }
+
+    .bar.pos { background: var(--green); }
+    .bar.neg { background: var(--red); }
+    .bar.neu { background: var(--cyan); }
+    .bar.warn { background: var(--yellow); }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 150px 1fr 55px;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+      font-size: 12px;
+    }
+
+    .score-track {
+      background: #050505;
+      border: 1px solid #333;
+      height: 18px;
+    }
+
+    .score-fill {
+      height: 100%;
+      background: var(--cyan);
+    }
+
+    .mini-desc {
+      color: var(--muted);
+      font-size: 12px;
       line-height: 1.7;
+      margin-top: 14px;
+    }
+
+    .table-panel {
+      display: none;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      border: 1px solid #222;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 980px;
+      font-size: 12px;
+    }
+
+    th, td {
+      padding: 12px 10px;
+      border-bottom: 1px solid #292929;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      color: var(--muted);
+      background: #070707;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      text-transform: uppercase;
+    }
+
+    tr:hover td {
+      background: #141414;
+    }
+
+    .small {
+      font-size: 11px;
+      color: var(--muted);
+      line-height: 1.55;
+      margin-top: 4px;
+    }
+
+    .pill {
+      display: inline-block;
+      border: 1px solid #444;
+      padding: 3px 7px;
+      background: #050505;
+      font-size: 11px;
+      color: var(--yellow);
+      white-space: nowrap;
+    }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 14px;
+    }
+
+    .select {
+      background: #050505;
+      color: var(--text);
+      border: 2px solid var(--line);
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 12px;
+      outline: none;
+    }
+
+    .rank-box {
+      display: grid;
+      gap: 12px;
+    }
+
+    .rank-item {
+      border: 1px solid #303030;
+      background: #080808;
+      padding: 12px;
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      align-items: center;
+      font-size: 12px;
+    }
+
+    .rank-item strong {
+      color: var(--yellow);
+      font-size: 14px;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-size: 13px;
+      line-height: 1.7;
+      padding: 12px 0;
+    }
+
+    .footer-note {
+      color: var(--muted);
+      font-size: 12px;
+      line-height: 1.8;
+      border-top: 1px solid #222;
+      padding-top: 20px;
+      margin-top: 28px;
+    }
+
+    .loader {
+      display: inline-block;
+      color: var(--green);
+    }
+
+    @media (max-width: 1000px) {
+      .cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .grid-2,
+      .grid-3 {
+        grid-template-columns: 1fr;
+      }
+
+      .search {
+        grid-template-columns: 1fr;
+      }
+
+      button {
+        min-height: 48px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .wrap {
+        padding: 18px 12px 70px;
+      }
+
+      .hero {
+        padding: 20px;
+      }
+
+      .cards {
+        grid-template-columns: 1fr;
+      }
+
+      .roast-text {
+        font-size: 15px;
+      }
+
+      .bar-row,
+      .score-row {
+        grid-template-columns: 1fr;
+      }
     }
   </style>
 </head>
+
 <body>
-  <div class="box">
-    <h1>POLYMARKET WALLET DASHBOARD</h1>
-    <p>部署测试成功。</p>
-    <p>下一步：替换为完整的钱包收益分析页面。</p>
+  <div class="wrap">
+    <div class="topbar">
+      <div>POLYMARKET WALLET INTELLIGENCE TERMINAL <span class="blink">█</span></div>
+      <div id="clock">SYSTEM ONLINE</div>
+    </div>
+
+    <section class="hero">
+      <div class="hero-content">
+        <div class="terminal-label">ON-CHAIN PREDICTION MARKET DETECTIVE</div>
+        <h1>POLYMARKET<br />WALLET DASHBOARD</h1>
+        <p class="subtitle">
+          输入一个Polymarket钱包地址，分析它在所有市场里的收益、胜率、ROI、交易分类、交易风格、盈利集中度和地址人格。
+          数据来自公开接口，不连接钱包，不索要私钥，不执行任何交易。
+        </p>
+
+        <div class="search">
+          <input id="walletInput" placeholder="输入Polymarket钱包地址，例如 0x..." />
+          <button id="analyzeBtn">ANALYZE</button>
+        </div>
+
+        <div id="status" class="status">等待输入地址。</div>
+      </div>
+    </section>
+
+    <section id="overview" class="panel overview">
+      <div class="wallet-line">
+        <div>WALLET：<span id="walletAddress" class="wallet-address">-</span></div>
+        <div>DATA MODE：PUBLIC API ONLY</div>
+      </div>
+
+      <div id="badges" class="badges"></div>
+
+      <div class="roast-box">
+        <div class="roast-title">地址鉴定 / WALLET ROAST</div>
+        <div id="roastText" class="roast-text">-</div>
+      </div>
+    </section>
+
+    <section id="cards" class="cards"></section>
+
+    <section id="mainGrids" class="grid-2">
+      <div class="panel">
+        <h2 class="panel-title">CATEGORY PNL <span>分类收益</span></h2>
+        <div id="categoryPnl"></div>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-title">CATEGORY VOLUME <span>分类交易额</span></h2>
+        <div id="categoryVolume"></div>
+      </div>
+    </section>
+
+    <section id="scoreGrids" class="grid-3">
+      <div class="panel">
+        <h2 class="panel-title">TRADER STYLE <span>交易人格评分</span></h2>
+        <div id="styleScores"></div>
+        <div class="mini-desc">
+          评分仅基于公开交易数据推断，用来做行为画像，不代表真实身份，也不构成投资建议。
+        </div>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-title">TOP WINS <span>最赚钱市场</span></h2>
+        <div id="topWins"></div>
+      </div>
+
+      <div class="panel">
+        <h2 class="panel-title">TOP LOSSES <span>最亏钱市场</span></h2>
+        <div id="topLosses"></div>
+      </div>
+    </section>
+
+    <section id="monthlyPanel" class="panel table-panel">
+      <h2 class="panel-title">MONTHLY PERFORMANCE <span>月度表现</span></h2>
+      <div id="monthlyBars"></div>
+    </section>
+
+    <section id="rankPanel" class="panel table-panel">
+      <h2 class="panel-title">LEADERBOARD CHECK <span>排行榜返回范围内查询</span></h2>
+      <div id="rankBox" class="rank-box"></div>
+      <div class="mini-desc">
+        说明：如果显示“未出现在返回范围内”，只代表当前接口返回榜单中没有查到该地址，不代表全站没有排名。页面不会编造排名。
+      </div>
+    </section>
+
+    <section id="marketsPanel" class="panel table-panel">
+      <h2 class="panel-title">MARKET DETAILS <span>市场明细</span></h2>
+
+      <div class="toolbar">
+        <select id="categoryFilter" class="select">
+          <option value="ALL">全部分类</option>
+        </select>
+
+        <select id="pnlFilter" class="select">
+          <option value="ALL">全部盈亏</option>
+          <option value="WIN">只看盈利</option>
+          <option value="LOSS">只看亏损</option>
+          <option value="OPEN">只看当前持仓</option>
+        </select>
+
+        <select id="sortMode" class="select">
+          <option value="ABS_PNL">按绝对盈亏排序</option>
+          <option value="PNL_DESC">按盈利从高到低</option>
+          <option value="PNL_ASC">按亏损从高到低</option>
+          <option value="VOLUME_DESC">按投入/交易额排序</option>
+          <option value="DATE_DESC">按最近时间排序</option>
+        </select>
+      </div>
+
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>市场</th>
+              <th>分类</th>
+              <th>方向</th>
+              <th>盈亏</th>
+              <th>投入/成本</th>
+              <th>ROI</th>
+              <th>交易次数</th>
+              <th>状态</th>
+              <th>时间</th>
+            </tr>
+          </thead>
+          <tbody id="marketTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section id="tradesPanel" class="panel table-panel">
+      <h2 class="panel-title">RECENT TRADES <span>最近交易记录</span></h2>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>时间</th>
+              <th>市场</th>
+              <th>分类</th>
+              <th>方向</th>
+              <th>买/卖</th>
+              <th>数量</th>
+              <th>价格</th>
+              <th>估算成交额</th>
+            </tr>
+          </thead>
+          <tbody id="tradesTable"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      <strong>数据口径说明：</strong><br />
+      1. 已实现盈亏优先使用Polymarket公开Data API返回的realizedPnl字段。<br />
+      2. 未实现盈亏优先使用当前持仓里的cashPnl字段。<br />
+      3. 胜率按市场聚合后计算，不按单笔交易计算，避免一个市场多次交易导致胜率失真。<br />
+      4. 市场分类使用标题、slug、标签等公开字段做启发式判断；若接口字段缺失，归入Other。<br />
+      5. 排名只展示接口返回范围内查到的结果，查不到不会编造。<br />
+      6. 本页面仅用于公开数据分析，不连接钱包，不请求授权，不执行交易。
+    </div>
   </div>
+
+  <script>
+    const DATA_API = "https://data-api.polymarket.com";
+
+    const walletInput = document.getElementById("walletInput");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const statusBox = document.getElementById("status");
+
+    const overview = document.getElementById("overview");
+    const walletAddress = document.getElementById("walletAddress");
+    const roastText = document.getElementById("roastText");
+    const badgesBox = document.getElementById("badges");
+    const cards = document.getElementById("cards");
+
+    const mainGrids = document.getElementById("mainGrids");
+    const scoreGrids = document.getElementById("scoreGrids");
+    const categoryPnl = document.getElementById("categoryPnl");
+    const categoryVolume = document.getElementById("categoryVolume");
+    const styleScores = document.getElementById("styleScores");
+    const topWins = document.getElementById("topWins");
+    const topLosses = document.getElementById("topLosses");
+    const monthlyPanel = document.getElementById("monthlyPanel");
+    const monthlyBars = document.getElementById("monthlyBars");
+    const rankPanel = document.getElementById("rankPanel");
+    const rankBox = document.getElementById("rankBox");
+    const marketsPanel = document.getElementById("marketsPanel");
+    const tradesPanel = document.getElementById("tradesPanel");
+    const marketTable = document.getElementById("marketTable");
+    const tradesTable = document.getElementById("tradesTable");
+
+    const categoryFilter = document.getElementById("categoryFilter");
+    const pnlFilter = document.getElementById("pnlFilter");
+    const sortMode = document.getElementById("sortMode");
+
+    let latestResult = null;
+
+    setInterval(() => {
+      document.getElementById("clock").textContent = new Date().toLocaleString();
+    }, 1000);
+
+    function setStatus(text, isError = false) {
+      statusBox.innerHTML = isError ? escapeHtml(text) : `<span class="loader">> </span>${escapeHtml(text)}`;
+      statusBox.className = isError ? "status error" : "status";
+    }
+
+    function resetUI() {
+      overview.style.display = "none";
+      cards.style.display = "none";
+      mainGrids.style.display = "none";
+      scoreGrids.style.display = "none";
+      monthlyPanel.style.display = "none";
+      rankPanel.style.display = "none";
+      marketsPanel.style.display = "none";
+      tradesPanel.style.display = "none";
+
+      cards.innerHTML = "";
+      badgesBox.innerHTML = "";
+      categoryPnl.innerHTML = "";
+      categoryVolume.innerHTML = "";
+      styleScores.innerHTML = "";
+      topWins.innerHTML = "";
+      topLosses.innerHTML = "";
+      monthlyBars.innerHTML = "";
+      rankBox.innerHTML = "";
+      marketTable.innerHTML = "";
+      tradesTable.innerHTML = "";
+      categoryFilter.innerHTML = `<option value="ALL">全部分类</option>`;
+    }
+
+    function isWallet(address) {
+      return /^0x[a-fA-F0-9]{40}$/.test(address.trim());
+    }
+
+    function num(value) {
+      const n = Number(value);
+      return Number.isFinite(n) ? n : 0;
+    }
+
+    function money(value) {
+      const n = num(value);
+      const sign = n < 0 ? "-" : "";
+      return sign + "$" + Math.abs(n).toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      });
+    }
+
+    function compactMoney(value) {
+      const n = num(value);
+      const abs = Math.abs(n);
+      const sign = n < 0 ? "-" : "";
+      if (abs >= 1_000_000) return sign + "$" + (abs / 1_000_000).toFixed(2) + "M";
+      if (abs >= 1_000) return sign + "$" + (abs / 1_000).toFixed(2) + "K";
+      return money(n);
+    }
+
+    function pct(value) {
+      const n = num(value);
+      return n.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+      }) + "%";
+    }
+
+    function shortAddr(value) {
+      if (!value) return "-";
+      return value.slice(0, 6) + "..." + value.slice(-4);
+    }
+
+    function shortText(value, max = 46) {
+      const text = String(value || "");
+      return text.length > max ? text.slice(0, max) + "..." : text;
+    }
+
+    function formatDate(value) {
+      if (!value) return "-";
+      let d;
+
+      if (typeof value === "number") {
+        d = new Date(value * 1000);
+      } else if (/^\d+$/.test(String(value))) {
+        const n = Number(value);
+        d = new Date(n > 100000000000 ? n : n * 1000);
+      } else {
+        d = new Date(value);
+      }
+
+      if (Number.isNaN(d.getTime())) return "-";
+      return d.toLocaleString();
+    }
+
+    function monthKey(value) {
+      if (!value) return "Unknown";
+      let d;
+
+      if (typeof value === "number") {
+        d = new Date(value * 1000);
+      } else if (/^\d+$/.test(String(value))) {
+        const n = Number(value);
+        d = new Date(n > 100000000000 ? n : n * 1000);
+      } else {
+        d = new Date(value);
+      }
+
+      if (Number.isNaN(d.getTime())) return "Unknown";
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+    }
+
+    function getTitle(item) {
+      return item.title || item.eventTitle || item.marketTitle || item.question || item.name || item.slug || item.eventSlug || "Unknown Market";
+    }
+
+    function getText(item) {
+      return [
+        item.title,
+        item.eventTitle,
+        item.marketTitle,
+        item.question,
+        item.name,
+        item.slug,
+        item.eventSlug,
+        item.category,
+        item.tag,
+        item.tags,
+        item.outcome
+      ].filter(Boolean).join(" ").toLowerCase();
+    }
+
+    function getMarketKey(item) {
+      return item.conditionId || item.market || item.marketId || item.slug || item.eventSlug || getTitle(item);
+    }
+
+    function classifyMarket(item) {
+      const text = getText(item);
+
+      if (
+        /btc|bitcoin|eth|ethereum|solana|sol\b|xrp|doge|crypto|coinbase|binance|etf|airdrop|token|defi|stablecoin|blockchain|chainlink|base|hyperliquid|pump|memecoin|memes coin|satoshi/.test(text)
+      ) return "Crypto";
+
+      if (
+        /trump|biden|election|senate|congress|president|democrat|republican|politic|white house|poll|minister|parliament|china|russia|ukraine|israel|iran|gaza|tariff|government/.test(text)
+      ) return "Politics";
+
+      if (
+        /nba|nfl|mlb|nhl|soccer|football|champions league|premier league|world cup|super bowl|ufc|boxing|tennis|olympic|formula|f1|sports|game|match|team|player|goal|mvp/.test(text)
+      ) return "Sports";
+
+      if (
+        /fed|fomc|rate cut|interest rate|inflation|cpi|ppi|gdp|recession|jobless|unemployment|payroll|treasury|yield|economy|economic|macro/.test(text)
+      ) return "Economics";
+
+      if (
+        /stock|stocks|nasdaq|s&p|dow|apple|tesla|nvidia|meta|microsoft|google|amazon|earnings|ipo|market cap|finance|bank|blackrock|goldman/.test(text)
+      ) return "Finance";
+
+      if (
+        /ai|openai|chatgpt|anthropic|google|apple|tesla|robot|spacex|starship|tech|technology|iphone|chip|semiconductor|nvidia/.test(text)
+      ) return "Tech";
+
+      if (
+        /weather|hurricane|rain|snow|temperature|storm|earthquake|climate|wildfire/.test(text)
+      ) return "Weather";
+
+      if (
+        /oscar|grammy|movie|film|box office|taylor swift|music|celebrity|culture|netflix|youtube|tiktok|x twitter|meme|game awards/.test(text)
+      ) return "Culture";
+
+      return "Other";
+    }
+
+    async function fetchJson(path, params = {}) {
+      const url = new URL(DATA_API + path);
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null && value !== "") {
+          url.searchParams.set(key, value);
+        }
+      });
+
+      const res = await fetch(url.toString());
+
+      if (!res.ok) {
+        throw new Error(`${path} 请求失败：${res.status}`);
+      }
+
+      const data = await res.json();
+
+      if (Array.isArray(data)) return data;
+      if (Array.isArray(data.data)) return data.data;
+      if (Array.isArray(data.results)) return data.results;
+      if (Array.isArray(data.leaderboard)) return data.leaderboard;
+
+      return [];
+    }
+
+    async function fetchAll(path, params = {}, options = {}) {
+      const limit = options.limit || 500;
+      const maxPages = options.maxPages || 30;
+      const label = options.label || path;
+      const all = [];
+
+      for (let page = 0; page < maxPages; page++) {
+        const offset = page * limit;
+        setStatus(`正在抓取 ${label}：第 ${page + 1} 页，已获取 ${all.length} 条...`);
+
+        const batch = await fetchJson(path, {
+          ...params,
+          limit,
+          offset
+        });
+
+        all.push(...batch);
+
+        if (!Array.isArray(batch) || batch.length < limit) break;
+      }
+
+      return all;
+    }
+
+    async function loadWalletData(wallet) {
+      const [closed, positions, trades] = await Promise.all([
+        fetchAll("/closed-positions", {
+          user: wallet,
+          sortBy: "TIMESTAMP",
+          sortDirection: "DESC"
+        }, {
+          limit: 500,
+          maxPages: 60,
+          label: "已平仓仓位"
+        }),
+
+        fetchAll("/positions", {
+          user: wallet,
+          sizeThreshold: 0
+        }, {
+          limit: 500,
+          maxPages: 20,
+          label: "当前持仓"
+        }),
+
+        fetchAll("/trades", {
+          user: wallet,
+          takerOnly: false
+        }, {
+          limit: 500,
+          maxPages: 60,
+          label: "交易记录"
+        })
+      ]);
+
+      return { closed, positions, trades };
+    }
+
+    async function checkLeaderboards(wallet) {
+      const checks = [
+        { label: "Overall PnL / All Time", category: "OVERALL", timePeriod: "ALL", orderBy: "PNL" },
+        { label: "Overall Volume / All Time", category: "OVERALL", timePeriod: "ALL", orderBy: "VOL" },
+        { label: "Crypto PnL / All Time", category: "CRYPTO", timePeriod: "ALL", orderBy: "PNL" },
+        { label: "Politics PnL / All Time", category: "POLITICS", timePeriod: "ALL", orderBy: "PNL" },
+        { label: "Sports PnL / All Time", category: "SPORTS", timePeriod: "ALL", orderBy: "PNL" }
+      ];
+
+      const results = [];
+
+      for (const c of checks) {
+        try {
+          setStatus(`正在查询排行榜：${c.label}...`);
+
+          const rows = await fetchJson("/leaderboard", {
+            category: c.category,
+            timePeriod: c.timePeriod,
+            orderBy: c.orderBy,
+            limit: 500,
+            offset: 0
+          });
+
+          const found = rows.find(row => {
+            const candidates = [
+              row.proxyWallet,
+              row.wallet,
+              row.user,
+              row.address,
+              row.profile?.proxyWallet
+            ].filter(Boolean).map(v => String(v).toLowerCase());
+
+            return candidates.includes(wallet.toLowerCase());
+          });
+
+          results.push({
+            ...c,
+            found: Boolean(found),
+            rank: found ? (found.rank || found.position || found.place || null) : null,
+            pnl: found ? (found.pnl || found.profit || found.realizedPnl || null) : null,
+            volume: found ? (found.volume || found.vol || null) : null,
+            raw: found || null
+          });
+        } catch (err) {
+          results.push({
+            ...c,
+            error: true,
+            message: err.message
+          });
+        }
+      }
+
+      return results;
+    }
+
+    function analyzeData(raw) {
+      const marketMap = new Map();
+
+      for (const item of raw.closed) {
+        const key = getMarketKey(item);
+
+        if (!marketMap.has(key)) {
+          marketMap.set(key, {
+            key,
+            title: getTitle(item),
+            category: classifyMarket(item),
+            outcome: item.outcome || "-",
+            realizedPnl: 0,
+            unrealizedPnl: 0,
+            totalPnl: 0,
+            cost: 0,
+            currentValue: 0,
+            tradeVolume: 0,
+            tradeCount: 0,
+            open: false,
+            endDate: item.endDate || item.endTime || item.timestamp || null,
+            latestTime: item.endDate || item.endTime || item.timestamp || null,
+            conditionId: item.conditionId || key
+          });
+        }
+
+        const row = marketMap.get(key);
+        row.realizedPnl += num(item.realizedPnl);
+        row.cost += num(item.totalBought || item.initialValue || item.value);
+        row.totalPnl = row.realizedPnl + row.unrealizedPnl;
+        row.endDate = row.endDate || item.endDate || item.endTime || item.timestamp || null;
+        row.latestTime = item.endDate || item.endTime || item.timestamp || row.latestTime;
+      }
+
+      for (const item of raw.positions) {
+        const key = getMarketKey(item);
+
+        if (!marketMap.has(key)) {
+          marketMap.set(key, {
+            key,
+            title: getTitle(item),
+            category: classifyMarket(item),
+            outcome: item.outcome || "-",
+            realizedPnl: 0,
+            unrealizedPnl: 0,
+            totalPnl: 0,
+            cost: 0,
+            currentValue: 0,
+            tradeVolume: 0,
+            tradeCount: 0,
+            open: true,
+            endDate: item.endDate || item.endTime || null,
+            latestTime: item.endDate || item.endTime || null,
+            conditionId: item.conditionId || key
+          });
+        }
+
+        const row = marketMap.get(key);
+        row.open = true;
+        row.unrealizedPnl += num(item.cashPnl || item.pnl);
+        row.currentValue += num(item.currentValue || item.value);
+        row.cost += num(item.initialValue || item.totalBought || 0);
+        row.totalPnl = row.realizedPnl + row.unrealizedPnl;
+        row.latestTime = item.endDate || item.endTime || row.latestTime;
+      }
+
+      const tradeCategoryVolume = {};
+      const monthly = {};
+      let totalTradeVolume = 0;
+
+      for (const t of raw.trades) {
+        const key = getMarketKey(t);
+        const volume = num(t.size) * num(t.price);
+        totalTradeVolume += volume;
+
+        if (!marketMap.has(key)) {
+          marketMap.set(key, {
+            key,
+            title: getTitle(t),
+            category: classifyMarket(t),
+            outcome: t.outcome || "-",
+            realizedPnl: 0,
+            unrealizedPnl: 0,
+            totalPnl: 0,
+            cost: 0,
+            currentValue: 0,
+            tradeVolume: 0,
+            tradeCount: 0,
+            open: false,
+            endDate: null,
+            latestTime: t.timestamp || null,
+            conditionId: t.conditionId || key
+          });
+        }
+
+        const row = marketMap.get(key);
+        row.tradeVolume += volume;
+        row.tradeCount += 1;
+        row.latestTime = t.timestamp || row.latestTime;
+
+        const cat = row.category || classifyMarket(t);
+        tradeCategoryVolume[cat] = (tradeCategoryVolume[cat] || 0) + volume;
+
+        const mk = monthKey(t.timestamp);
+        if (!monthly[mk]) {
+          monthly[mk] = {
+            month: mk,
+            volume: 0,
+            trades: 0,
+            pnl: 0,
+            markets: new Set()
+          };
+        }
+
+        monthly[mk].volume += volume;
+        monthly[mk].trades += 1;
+        monthly[mk].markets.add(key);
+      }
+
+      const markets = Array.from(marketMap.values()).map(row => {
+        const baseCost = row.cost > 0 ? row.cost : row.tradeVolume;
+        return {
+          ...row,
+          totalPnl: row.realizedPnl + row.unrealizedPnl,
+          roi: baseCost > 0 ? (row.realizedPnl + row.unrealizedPnl) / baseCost * 100 : 0,
+          displayCost: baseCost
+        };
+      });
+
+      markets.sort((a, b) => Math.abs(b.totalPnl) - Math.abs(a.totalPnl));
+
+      const closedMarkets = markets.filter(m => Math.abs(m.realizedPnl) > 0 || !m.open);
+      const wins = markets.filter(m => m.totalPnl > 0).length;
+      const losses = markets.filter(m => m.totalPnl < 0).length;
+      const breakeven = markets.filter(m => m.totalPnl === 0).length;
+
+      const realizedPnl = markets.reduce((s, m) => s + m.realizedPnl, 0);
+      const unrealizedPnl = markets.reduce((s, m) => s + m.unrealizedPnl, 0);
+      const totalPnl = realizedPnl + unrealizedPnl;
+      const totalCost = markets.reduce((s, m) => s + m.displayCost, 0);
+      const currentValue = markets.reduce((s, m) => s + m.currentValue, 0);
+      const marketCount = markets.length;
+      const tradeCount = raw.trades.length;
+      const openPositions = raw.positions.length;
+      const winRate = wins + losses > 0 ? wins / (wins + losses) * 100 : 0;
+      const roi = totalCost > 0 ? totalPnl / totalCost * 100 : 0;
+      const avgTradesPerMarket = marketCount > 0 ? tradeCount / marketCount : 0;
+
+      const categoryStats = {};
+      for (const m of markets) {
+        const cat = m.category || "Other";
+
+        if (!categoryStats[cat]) {
+          categoryStats[cat] = {
+            category: cat,
+            pnl: 0,
+            realizedPnl: 0,
+            unrealizedPnl: 0,
+            volume: 0,
+            cost: 0,
+            markets: 0,
+            wins: 0,
+            losses: 0
+          };
+        }
+
+        categoryStats[cat].pnl += m.totalPnl;
+        categoryStats[cat].realizedPnl += m.realizedPnl;
+        categoryStats[cat].unrealizedPnl += m.unrealizedPnl;
+        categoryStats[cat].volume += m.tradeVolume || tradeCategoryVolume[cat] || 0;
+        categoryStats[cat].cost += m.displayCost;
+        categoryStats[cat].markets += 1;
+        if (m.totalPnl > 0) categoryStats[cat].wins += 1;
+        if (m.totalPnl < 0) categoryStats[cat].losses += 1;
+      }
+
+      for (const cat of Object.keys(categoryStats)) {
+        const c = categoryStats[cat];
+        c.roi = c.cost > 0 ? c.pnl / c.cost * 100 : 0;
+        c.winRate = c.wins + c.losses > 0 ? c.wins / (c.wins + c.losses) * 100 : 0;
+      }
+
+      const categoryRows = Object.values(categoryStats).sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
+      const topCategoryByVolume = [...categoryRows].sort((a, b) => b.volume - a.volume)[0] || null;
+      const topCategoryByPnl = [...categoryRows].sort((a, b) => b.pnl - a.pnl)[0] || null;
+
+      const profitableMarkets = markets.filter(m => m.totalPnl > 0).sort((a, b) => b.totalPnl - a.totalPnl);
+      const losingMarkets = markets.filter(m => m.totalPnl < 0).sort((a, b) => a.totalPnl - b.totalPnl);
+
+      const top5Profit = profitableMarkets.slice(0, 5).reduce((s, m) => s + m.totalPnl, 0);
+      const totalProfitOnly = profitableMarkets.reduce((s, m) => s + m.totalPnl, 0);
+      const profitConcentration = totalProfitOnly > 0 ? top5Profit / totalProfitOnly * 100 : 0;
+
+      const top1Cost = markets.length ? Math.max(...markets.map(m => m.displayCost)) : 0;
+      const concentration = totalCost > 0 ? top1Cost / totalCost * 100 : 0;
+
+      for (const m of markets) {
+        const mk = monthKey(m.latestTime || m.endDate);
+        if (!monthly[mk]) {
+          monthly[mk] = {
+            month: mk,
+            volume: 0,
+            trades: 0,
+            pnl: 0,
+            markets: new Set()
+          };
+        }
+        monthly[mk].pnl += m.totalPnl;
+        monthly[mk].markets.add(m.key);
+      }
+
+      const monthlyRows = Object.values(monthly)
+        .map(m => ({
+          ...m,
+          markets: m.markets instanceof Set ? m.markets.size : m.markets
+        }))
+        .sort((a, b) => a.month.localeCompare(b.month));
+
+      const style = calculateStyleScores({
+        totalPnl,
+        roi,
+        winRate,
+        tradeCount,
+        marketCount,
+        totalTradeVolume,
+        avgTradesPerMarket,
+        concentration,
+        profitConcentration,
+        topCategoryByVolume,
+        totalCost
+      });
+
+      return {
+        raw,
+        markets,
+        categoryRows,
+        monthlyRows,
+        profitableMarkets,
+        losingMarkets,
+        summary: {
+          realizedPnl,
+          unrealizedPnl,
+          totalPnl,
+          totalCost,
+          currentValue,
+          totalTradeVolume,
+          wins,
+          losses,
+          breakeven,
+          winRate,
+          roi,
+          marketCount,
+          tradeCount,
+          openPositions,
+          avgTradesPerMarket,
+          concentration,
+          profitConcentration,
+          topCategoryByVolume,
+          topCategoryByPnl,
+          style
+        }
+      };
+    }
+
+    function clamp(n, min = 0, max = 100) {
+      return Math.max(min, Math.min(max, n));
+    }
+
+    function calculateStyleScores(s) {
+      const profitability = clamp(
+        (s.roi > 0 ? Math.min(s.roi, 50) * 1.2 : s.roi * 0.7) +
+        (s.totalPnl > 0 ? 30 : 0) +
+        (s.winRate - 45) * 0.6
+      );
+
+      const activity = clamp(
+        Math.log10(Math.max(s.tradeCount, 1)) * 22 +
+        Math.log10(Math.max(s.marketCount, 1)) * 16
+      );
+
+      const highFrequency = clamp(
+        s.avgTradesPerMarket * 9 + Math.log10(Math.max(s.tradeCount, 1)) * 12
+      );
+
+      const concentration = clamp(s.concentration * 1.4 + s.profitConcentration * 0.35);
+
+      const diversification = clamp(
+        Math.log10(Math.max(s.marketCount, 1)) * 30 - s.concentration * 0.45
+      );
+
+      const reverseIndicator = clamp(
+        (s.totalPnl < 0 ? 35 : 0) +
+        (s.roi < 0 ? Math.abs(s.roi) * 1.4 : 0) +
+        (s.winRate < 45 ? (45 - s.winRate) * 1.1 : 0) +
+        (s.totalTradeVolume > 50000 && s.totalPnl < 0 ? 25 : 0)
+      );
+
+      return {
+        profitability,
+        activity,
+        highFrequency,
+        concentration,
+        diversification,
+        reverseIndicator
+      };
+    }
+
+    function generateBadges(summary) {
+      const tags = [];
+      const topCat = summary.topCategoryByVolume?.category;
+
+      if (summary.totalPnl > 0 && summary.roi > 15) tags.push("Smart Money味");
+      if (summary.totalPnl < 0 && summary.totalTradeVolume > 30000) tags.push("流动性贡献者");
+      if (summary.winRate < 45 && summary.totalPnl > 0) tags.push("小亏大赚型");
+      if (summary.winRate > 55 && summary.totalPnl < 0) tags.push("胜率幻觉患者");
+      if (topCat === "Crypto") tags.push("Crypto脑");
+      if (topCat === "Politics") tags.push("新闻流玩家");
+      if (topCat === "Sports") tags.push("体育盘上头型");
+      if (summary.profitConcentration > 70 && summary.totalPnl > 0) tags.push("一战成名型");
+      if (summary.avgTradesPerMarket > 8) tags.push("高频倾向");
+      if (summary.marketCount > 250) tags.push("广撒网玩家");
+      if (summary.openPositions > 20) tags.push("仓位很多");
+
+      if (!tags.length) tags.push("普通观察对象");
+
+      return tags.slice(0, 8);
+    }
+
+    function generateRoast(summary) {
+      const topCat = summary.topCategoryByVolume?.category || "Other";
+      const pnl = summary.totalPnl;
+      const roi = summary.roi;
+      const winRate = summary.winRate;
+      const volume = summary.totalTradeVolume;
+      const marketCount = summary.marketCount;
+      const avgTrades = summary.avgTradesPerMarket;
+      const concentration = summary.profitConcentration;
+
+      if (marketCount === 0 && summary.tradeCount === 0) {
+        return "这个地址目前像刚走进赌场门口，还没来得及下注。数据太少，暂时看不出是高手、赌狗，还是单纯路过。";
+      }
+
+      if (pnl > 0 && roi > 20 && winRate > 50) {
+        return "这个地址有点东西，PnL、ROI、胜率都在线。不是来Polymarket交学费的，更像是来收别人学费的。";
+      }
+
+      if (pnl > 0 && winRate < 45) {
+        return "胜率不高，但刀刀见血。这个地址不是靠天天赢，是靠少数几次把赔率打穿。小亏当学费，大赚当年终奖。";
+      }
+
+      if (pnl < 0 && winRate > 55) {
+        return "胜率看起来挺体面，但钱包余额不太配合。典型的小赢很多次，一把大的全还回去，像考试选择题全会，最后大题写崩。";
+      }
+
+      if (pnl < 0 && volume > 50000) {
+        return "交易量很猛，收益很佛。这个地址不是在预测市场，更像是在给Polymarket提供流动性和情绪价值。";
+      }
+
+      if (pnl < 0 && roi < -20) {
+        return "这个地址的市场参与感很强，盈利能力暂时没跟上。属于每次都很有想法，但市场不太尊重想法的类型。";
+      }
+
+      if (topCat === "Crypto" && pnl > 0) {
+        return "这个地址的脑子可能不是长在人身上，是长在BTC K线上。主要靠Crypto盘吃饭，链上味很重。";
+      }
+
+      if (topCat === "Crypto" && pnl < 0) {
+        return "Crypto盘参与度很高，但收益没站起来。像是K线看多了，钱包先晕车了。";
+      }
+
+      if (topCat === "Politics") {
+        return "这地址一看就是新闻流玩家。别人还在刷推特，它已经把仓位打出去了。问题是新闻会反转，仓位不会自动道歉。";
+      }
+
+      if (topCat === "Sports") {
+        return "体育盘参与度很高，属于比分还没出来，心跳已经提前结算的类型。赢了像懂球帝，输了像被裁判针对。";
+      }
+
+      if (concentration > 70 && pnl > 0) {
+        return "盈利高度集中，属于一战成名型地址。不是每次都准，但准的那次够别人记很久。";
+      }
+
+      if (avgTrades > 8) {
+        return "单市场交易次数偏高，手速很快，像是在盘口里反复横跳。要么是高频玩家，要么是鼠标有自己的想法。";
+      }
+
+      if (marketCount > 300 && roi < 5) {
+        return "参与市场很多，但收益一般。像一个Polymarket游客，什么都看，什么都买，最后主打一个到此一游。";
+      }
+
+      if (pnl > 0 && roi > 0) {
+        return "整体是赚钱的，但还没到封神级别。像个会挑盘口的老玩家，不一定每把都赢，但至少不是来做慈善的。";
+      }
+
+      if (pnl < 0) {
+        return "整体暂时亏钱，市场教育痕迹明显。这个地址不是没有判断，只是判断经常比结算慢半拍。";
+      }
+
+      return "这个地址表现比较中性，没有特别离谱的神迹，也没有特别惨烈的翻车。属于普通但值得继续观察的市场参与者。";
+    }
+
+    function renderCards(summary) {
+      const items = [
+        ["总盈亏", money(summary.totalPnl), summary.totalPnl >= 0 ? "green" : "red", "已实现 + 未实现"],
+        ["已实现盈亏", money(summary.realizedPnl), summary.realizedPnl >= 0 ? "green" : "red", "来自已平仓市场"],
+        ["未实现盈亏", money(summary.unrealizedPnl), summary.unrealizedPnl >= 0 ? "green" : "red", "来自当前持仓"],
+        ["当前持仓价值", money(summary.currentValue), "cyan", "公开持仓估算"],
+        ["ROI", pct(summary.roi), summary.roi >= 0 ? "green" : "red", "PnL / 成本估算"],
+        ["胜率", pct(summary.winRate), "yellow", "按市场聚合"],
+        ["交易额", compactMoney(summary.totalTradeVolume), "cyan", "按交易记录估算"],
+        ["参与市场", summary.marketCount.toLocaleString(), "purple", "conditionId聚合"],
+        ["交易次数", summary.tradeCount.toLocaleString(), "yellow", "公开交易记录"],
+        ["盈利市场", summary.wins.toLocaleString(), "green", "PnL > 0"],
+        ["亏损市场", summary.losses.toLocaleString(), "red", "PnL < 0"],
+        ["主要分类", summary.topCategoryByVolume?.category || "N/A", "orange", "按交易额估算"]
+      ];
+
+      cards.innerHTML = items.map(([label, value, color, note]) => `
+        <div class="card">
+          <div class="label">${escapeHtml(label)}</div>
+          <div class="value ${color}">${escapeHtml(value)}</div>
+          <div class="note">${escapeHtml(note)}</div>
+        </div>
+      `).join("");
+
+      cards.style.display = "grid";
+    }
+
+    function renderOverview(wallet, summary) {
+      walletAddress.textContent = wallet;
+      roastText.textContent = generateRoast(summary);
+
+      const badges = generateBadges(summary);
+      badgesBox.innerHTML = badges.map(b => `<span class="badge"># ${escapeHtml(b)}</span>`).join("");
+
+      overview.style.display = "block";
+    }
+
+    function renderBarList(container, rows, options = {}) {
+      const valueKey = options.valueKey || "pnl";
+      const labelKey = options.labelKey || "category";
+      const formatter = options.formatter || money;
+      const maxRows = options.maxRows || 10;
+      const mode = options.mode || "pnl";
+
+      const sliced = rows.slice(0, maxRows);
+
+      if (!sliced.length) {
+        container.innerHTML = `<div class="empty">暂无数据。</div>`;
+        return;
+      }
+
+      const max = Math.max(...sliced.map(r => Math.abs(num(r[valueKey]))), 1);
+
+      container.innerHTML = sliced.map(row => {
+        const value = num(row[valueKey]);
+        const width = Math.max(3, Math.abs(value) / max * 100);
+        let cls = "neu";
+        if (mode === "pnl") cls = value >= 0 ? "pos" : "neg";
+        if (mode === "warn") cls = "warn";
+
+        return `
+          <div class="bar-row">
+            <div class="bar-name" title="${escapeHtml(row[labelKey])}">${escapeHtml(shortText(row[labelKey], 20))}</div>
+            <div class="bar-track">
+              <div class="bar ${cls}" style="width:${width}%"></div>
+            </div>
+            <div class="${mode === "pnl" ? (value >= 0 ? "green" : "red") : "cyan"}">${escapeHtml(formatter(value))}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderCategories(categoryRows) {
+      const pnlRows = [...categoryRows].sort((a, b) => Math.abs(b.pnl) - Math.abs(a.pnl));
+      const volumeRows = [...categoryRows].sort((a, b) => b.volume - a.volume);
+
+      renderBarList(categoryPnl, pnlRows, {
+        valueKey: "pnl",
+        labelKey: "category",
+        formatter: money,
+        maxRows: 9,
+        mode: "pnl"
+      });
+
+      renderBarList(categoryVolume, volumeRows, {
+        valueKey: "volume",
+        labelKey: "category",
+        formatter: compactMoney,
+        maxRows: 9,
+        mode: "volume"
+      });
+
+      mainGrids.style.display = "grid";
+    }
+
+    function renderScores(style) {
+      const rows = [
+        ["盈利能力", style.profitability],
+        ["交易强度", style.activity],
+        ["高频倾向", style.highFrequency],
+        ["仓位集中度", style.concentration],
+        ["分散交易度", style.diversification],
+        ["反向明灯指数", style.reverseIndicator]
+      ];
+
+      styleScores.innerHTML = rows.map(([name, value]) => {
+        const v = clamp(value);
+        const cls = name.includes("反向") ? "red" : v >= 70 ? "green" : v >= 40 ? "yellow" : "cyan";
+
+        return `
+          <div class="score-row">
+            <div>${escapeHtml(name)}</div>
+            <div class="score-track">
+              <div class="score-fill" style="width:${v}%;"></div>
+            </div>
+            <div class="${cls}">${v.toFixed(0)}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    function renderTopMarkets(profitable, losing) {
+      renderBarList(topWins, profitable.map(m => ({
+        category: m.title,
+        pnl: m.totalPnl
+      })), {
+        valueKey: "pnl",
+        labelKey: "category",
+        formatter: money,
+        maxRows: 8,
+        mode: "pnl"
+      });
+
+      renderBarList(topLosses, losing.map(m => ({
+        category: m.title,
+        pnl: m.totalPnl
+      })), {
+        valueKey: "pnl",
+        labelKey: "category",
+        formatter: money,
+        maxRows: 8,
+        mode: "pnl"
+      });
+
+      scoreGrids.style.display = "grid";
+    }
+
+    function renderMonthly(rows) {
+      const valid = rows.filter(r => r.month !== "Unknown").slice(-18);
+
+      if (!valid.length) {
+        monthlyBars.innerHTML = `<div class="empty">暂无月度数据。</div>`;
+        monthlyPanel.style.display = "block";
+        return;
+      }
+
+      const max = Math.max(...valid.map(r => Math.abs(r.pnl)), 1);
+
+      monthlyBars.innerHTML = valid.map(row => {
+        const width = Math.max(3, Math.abs(row.pnl) / max * 100);
+        const cls = row.pnl >= 0 ? "pos" : "neg";
+
+        return `
+          <div class="bar-row">
+            <div class="bar-name">${escapeHtml(row.month)}</div>
+            <div class="bar-track">
+              <div class="bar ${cls}" style="width:${width}%"></div>
+            </div>
+            <div class="${row.pnl >= 0 ? "green" : "red"}">${money(row.pnl)}</div>
+          </div>
+          <div class="small" style="margin: -7px 0 12px 0;">
+            交易额 ${compactMoney(row.volume)} / 交易 ${row.trades} 笔 / 市场 ${row.markets} 个
+          </div>
+        `;
+      }).join("");
+
+      monthlyPanel.style.display = "block";
+    }
+
+    function renderRanks(results) {
+      if (!results || !results.length) {
+        rankBox.innerHTML = `<div class="empty">暂未查询到排行榜信息。</div>`;
+        rankPanel.style.display = "block";
+        return;
+      }
+
+      rankBox.innerHTML = results.map(r => {
+        if (r.error) {
+          return `
+            <div class="rank-item">
+              <div>${escapeHtml(r.label)}</div>
+              <strong class="muted">接口不可用</strong>
+            </div>
+          `;
+        }
+
+        if (r.found) {
+          return `
+            <div class="rank-item">
+              <div>
+                ${escapeHtml(r.label)}
+                <div class="small">在当前返回范围内查到该地址</div>
+              </div>
+              <strong>#${escapeHtml(r.rank || "Found")}</strong>
+            </div>
+          `;
+        }
+
+        return `
+          <div class="rank-item">
+            <div>${escapeHtml(r.label)}</div>
+            <strong class="muted">未出现在返回范围内</strong>
+          </div>
+        `;
+      }).join("");
+
+      rankPanel.style.display = "block";
+    }
+
+    function setupFilters(categoryRows) {
+      const cats = categoryRows.map(c => c.category).sort();
+
+      categoryFilter.innerHTML = `<option value="ALL">全部分类</option>` +
+        cats.map(c => `<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join("");
+
+      categoryFilter.onchange = renderMarketTableFromState;
+      pnlFilter.onchange = renderMarketTableFromState;
+      sortMode.onchange = renderMarketTableFromState;
+    }
+
+    function renderMarketTableFromState() {
+      if (!latestResult) return;
+
+      let rows = [...latestResult.markets];
+
+      const cat = categoryFilter.value;
+      const pnl = pnlFilter.value;
+      const sort = sortMode.value;
+
+      if (cat !== "ALL") {
+        rows = rows.filter(r => r.category === cat);
+      }
+
+      if (pnl === "WIN") rows = rows.filter(r => r.totalPnl > 0);
+      if (pnl === "LOSS") rows = rows.filter(r => r.totalPnl < 0);
+      if (pnl === "OPEN") rows = rows.filter(r => r.open);
+
+      if (sort === "ABS_PNL") rows.sort((a, b) => Math.abs(b.totalPnl) - Math.abs(a.totalPnl));
+      if (sort === "PNL_DESC") rows.sort((a, b) => b.totalPnl - a.totalPnl);
+      if (sort === "PNL_ASC") rows.sort((a, b) => a.totalPnl - b.totalPnl);
+      if (sort === "VOLUME_DESC") rows.sort((a, b) => b.displayCost - a.displayCost);
+      if (sort === "DATE_DESC") rows.sort((a, b) => new Date(formatDate(b.latestTime)).getTime() - new Date(formatDate(a.latestTime)).getTime());
+
+      renderMarketTable(rows);
+    }
+
+    function renderMarketTable(rows) {
+      if (!rows.length) {
+        marketTable.innerHTML = `<tr><td colspan="9" class="empty">当前筛选条件下没有数据。</td></tr>`;
+        marketsPanel.style.display = "block";
+        return;
+      }
+
+      marketTable.innerHTML = rows.slice(0, 500).map(row => `
+        <tr>
+          <td>
+            ${escapeHtml(row.title)}
+            <div class="small">${escapeHtml(shortText(row.key, 80))}</div>
+          </td>
+          <td><span class="pill">${escapeHtml(row.category)}</span></td>
+          <td>${escapeHtml(row.outcome || "-")}</td>
+          <td class="${row.totalPnl >= 0 ? "green" : "red"}">${money(row.totalPnl)}</td>
+          <td>${money(row.displayCost)}</td>
+          <td class="${row.roi >= 0 ? "green" : "red"}">${pct(row.roi)}</td>
+          <td>${row.tradeCount.toLocaleString()}</td>
+          <td>${row.open ? `<span class="pill">OPEN</span>` : `<span class="pill">CLOSED/UNKNOWN</span>`}</td>
+          <td>${formatDate(row.latestTime || row.endDate)}</td>
+        </tr>
+      `).join("");
+
+      marketsPanel.style.display = "block";
+    }
+
+    function renderTradesTable(trades) {
+      const sorted = [...trades].sort((a, b) => num(b.timestamp) - num(a.timestamp));
+
+      if (!sorted.length) {
+        tradesTable.innerHTML = `<tr><td colspan="8" class="empty">暂无交易记录。</td></tr>`;
+        tradesPanel.style.display = "block";
+        return;
+      }
+
+      tradesTable.innerHTML = sorted.slice(0, 300).map(t => {
+        const volume = num(t.size) * num(t.price);
+        const cat = classifyMarket(t);
+
+        return `
+          <tr>
+            <td>${formatDate(t.timestamp)}</td>
+            <td>
+              ${escapeHtml(getTitle(t))}
+              <div class="small">${escapeHtml(t.slug || t.eventSlug || "")}</div>
+            </td>
+            <td><span class="pill">${escapeHtml(cat)}</span></td>
+            <td>${escapeHtml(t.outcome || "-")}</td>
+            <td class="${String(t.side).toUpperCase() === "BUY" ? "green" : "red"}">${escapeHtml(t.side || "-")}</td>
+            <td>${num(t.size).toLocaleString(undefined, { maximumFractionDigits: 4 })}</td>
+            <td>${num(t.price).toFixed(4)}</td>
+            <td>${money(volume)}</td>
+          </tr>
+        `;
+      }).join("");
+
+      tradesPanel.style.display = "block";
+    }
+
+    async function run() {
+      const wallet = walletInput.value.trim();
+
+      resetUI();
+
+      if (!isWallet(wallet)) {
+        setStatus("请输入合法的0x钱包地址。", true);
+        return;
+      }
+
+      analyzeBtn.disabled = true;
+      analyzeBtn.textContent = "LOADING...";
+
+      try {
+        setStatus("开始抓取Polymarket公开数据...");
+
+        const raw = await loadWalletData(wallet);
+        const result = analyzeData(raw);
+        latestResult = result;
+
+        renderOverview(wallet, result.summary);
+        renderCards(result.summary);
+        renderCategories(result.categoryRows);
+        renderScores(result.summary.style);
+        renderTopMarkets(result.profitableMarkets, result.losingMarkets);
+        renderMonthly(result.monthlyRows);
+        setupFilters(result.categoryRows);
+        renderMarketTableFromState();
+        renderTradesTable(raw.trades);
+
+        setStatus("基础数据分析完成，正在尝试查询排行榜返回范围...");
+
+        const ranks = await checkLeaderboards(wallet);
+        renderRanks(ranks);
+
+        setStatus(
+          `分析完成：已平仓 ${raw.closed.length} 条，当前持仓 ${raw.positions.length} 条，交易记录 ${raw.trades.length} 条，聚合市场 ${result.markets.length} 个。`
+        );
+      } catch (err) {
+        console.error(err);
+        setStatus("分析失败：" + err.message + "。可能是接口限流、CORS、地址无数据，或Polymarket接口字段发生变化。", true);
+      } finally {
+        analyzeBtn.disabled = false;
+        analyzeBtn.textContent = "ANALYZE";
+      }
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    analyzeBtn.addEventListener("click", run);
+
+    walletInput.addEventListener("keydown", e => {
+      if (e.key === "Enter") run();
+    });
+  </script>
 </body>
 </html>
